@@ -1094,7 +1094,8 @@ local function buildGui()
 	local function makeSlider(text, key, minValue, maxValue, step, decimals, fineStep)
 		local row = makeRow(68)
 		makeRowLabel(row, text)
-		local format = "%." .. decimals .. "f"
+		local precision = math.clamp(math.floor(tonumber(decimals) or 0), 0, 6)
+		local format = "%." .. tostring(precision) .. "f"
 
 		local valueBox = create("TextBox", {
 			AnchorPoint = Vector2.new(1, 0),
@@ -1179,7 +1180,9 @@ local function buildGui()
 			local fr = (v - minValue) / (maxValue - minValue)
 			fill.Size = UDim2.fromScale(fr, 1)
 			knob.Position = UDim2.new(fr, 0, 0.5, 0)
-			if not valueBox:IsFocused() then valueBox.Text = string.format(format, v) end
+			if not valueBox:IsFocused() then
+				valueBox.Text = string.format(format, tonumber(v) or 0)
+			end
 		end
 		table.insert(refreshers, refresh)
 		

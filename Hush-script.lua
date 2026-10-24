@@ -48,6 +48,7 @@ local MonsterESP   = loadModule("Modules/MonsterESP.luau")
 --------------------------------------------------------------------------------
 local Config = {}
 for k, v in pairs(ConfigDef.Default) do Config[k] = v end
+Config.InfStamina = false -- เพิ่มค่าเริ่มต้นสำหรับ Infinite Stamina[cite: 3]
 local DEFAULT_CONFIG = table.clone(Config)
 
 -- ⚡ PREMIUM VIBRANT THEME - APPLIES FORCEFULLY
@@ -269,10 +270,26 @@ local function updateLighting(dt)
 end
 
 --------------------------------------------------------------------------------
--- 8. MODULES
+-- 8. MODULES & STAMINA
 --------------------------------------------------------------------------------
 local espFolder, lootEspFolder
 local targetAssist, itemESP, monsterESP
+
+-- ฟังก์ชันสำหรับจัดการ Infinite Stamina เพิ่มเข้ามาใหม่โดยไม่แก้ไขฟังก์ชันเดิม[cite: 3]
+local function updateStamina()
+	if not Config.InfStamina then return end
+	pcall(function()
+		local character = LocalPlayer.Character
+		if character then
+			local staminaVal = character:FindFirstChild("Stamina") or character:FindFirstChild("StaminaValue")
+			if staminaVal and staminaVal:IsA("ValueBase") then
+				staminaVal.Value = staminaVal.MaxValue or 100
+			elseif character:GetAttribute("Stamina") then
+				character:SetAttribute("Stamina", 100)
+			end
+		end
+	end)
+end
 
 --------------------------------------------------------------------------------
 -- 9. SHUTDOWN
@@ -1664,6 +1681,10 @@ local function buildGui()
 	makeConfigToggle("Skip dead players", "AliveCheck")
 	makeConfigToggle("Skip ForceField players", "IgnoreForceField")
 
+	-- เพิ่มหมวดและปุ่ม Toggle สำหรับ Infinite Stamina ในแท็บ Player[cite: 3]
+	makeSection("Stamina")
+	makeConfigToggle("Infinite stamina", "InfStamina")
+
 	makeSection("Information")
 	ui.statsLabel = makeNote("", 36)
 
@@ -1849,6 +1870,7 @@ local function frameUpdate(deltaTime)
 
 	local hasTarget = targetAssist:step(dt)
 
+	updateStamina() -- เรียกทำงาน Infinite Stamina ในลูปหลักโดยไม่กระทบส่วนอื่น[cite: 3]
 	updateVisuals(dt, hasTarget)
 	espShown = monsterESP and monsterESP:update(playerList, styleVersion, targetAssist) or 0
 	if itemESP then itemESP:update() end

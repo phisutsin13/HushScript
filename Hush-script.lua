@@ -1094,7 +1094,7 @@ local function buildGui()
 	local function makeSlider(text, key, minValue, maxValue, step, decimals, fineStep)
 		local row = makeRow(68)
 		makeRowLabel(row, text)
-		local format = "%.." .. decimals .. "f"
+		local format = "%." .. decimals .. "f"
 
 		local valueBox = create("TextBox", {
 			AnchorPoint = Vector2.new(1, 0),

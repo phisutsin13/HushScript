@@ -2106,3 +2106,45 @@ if not closed then
 	Utilities.debugLog(Config, "HushScript initialized")
 end
 
+
+-- ==========================================
+-- ฟังก์ชัน Boost FPS & เคลียร์แรมสะสม (ลดอาการแลคระยะยาว)
+-- ==========================================
+local function boostFPSAndClean()
+    task.spawn(function()
+        while true do
+            pcall(function()
+                local Lighting = game:GetService("Lighting")
+                local Workspace = game:GetService("Workspace")
+                
+                -- 1. ปิดเงาและเอฟเฟกต์แสงที่กินสเปก
+                Lighting.GlobalShadows = false
+                Lighting.FogEnd = 9e9
+                for _, v in ipairs(Lighting:GetChildren()) do
+                    if v:IsA("PostEffect") or v:IsA("Atmosphere") then
+                        v.Enabled = false
+                    end
+                end
+                
+                -- 2. ปิดเงาของวัตถุและเอฟเฟกต์ควัน/ประกายไฟรอบตัว (ถ้ามี)
+                for _, v in ipairs(Workspace:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CastShadow = false
+                    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") then
+                        v.Enabled = false
+                    end
+                end
+                
+                -- 3. สั่งเคลียร์แรมที่ขยะค้าง (Garbage Collection) ทุกๆ 30 วินาที
+                collectgarbage("collect")
+            end)
+            
+            -- วนลูปทำงานซ้ำทุกๆ 30 วินาที เพื่อป้องกันแรมรั่วและเคลียร์ขยะสะสม
+            task.wait(30)
+        end
+    end)
+    print("FPS Boost & Memory Cleaner Activated!")
+end
+
+-- สั่งรันฟังก์ชัน Boost FPS ทันที
+boostFPSAndClean()

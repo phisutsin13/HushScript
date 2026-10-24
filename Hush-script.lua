@@ -1,8 +1,34 @@
---[[
-	Hush-script.lua  (FINAL VERSION)
-	Premium Modern UI - VIBRANT COLORS & SMOOTH ANIMATIONS
-	Place in: StarterPlayer > StarterPlayerScripts
-]]
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local playerScripts = LocalPlayer:WaitForChild("PlayerScripts", 10)
+    if not playerScripts then return end
+    
+    local clientFolder = playerScripts:WaitForChild("Client", 10)
+    if not clientFolder then return end
+    
+    local breathModule = clientFolder:WaitForChild("Breath", 10)
+    if breathModule then
+        local success, breath = pcall(require, breathModule)
+        if success and type(breath) == "table" and breath.run then
+            breath.run = function(count, onProgress, onFinish)
+                task.spawn(function()
+                    task.wait(0.2)
+                    if onProgress then
+                        for i = 1, count do
+                            onProgress(true)
+                            task.wait(0.05)
+                        end
+                    end
+                    task.wait(0.2)
+                    if onFinish then
+                        onFinish(true)
+                    end
+                end)
+            end
+        end
+    end
+end)
 
 --------------------------------------------------------------------------------
 -- 1. SERVICES
@@ -2079,3 +2105,4 @@ if not closed then
 	RunService:BindToRenderStep(consts.RENDER_NAME, Enum.RenderPriority.Camera.Value + 1, onRenderStep)
 	Utilities.debugLog(Config, "HushScript initialized")
 end
+

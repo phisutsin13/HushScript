@@ -435,36 +435,27 @@ end
 --------------------------------------------------------------------------------
 -- 12. GUI BUILD
 --------------------------------------------------------------------------------
-
 local function applyPanelPosition()
 	if not ui then return end
 	ui.panel.Position = UDim2.fromOffset(panelPos.X, panelPos.Y)
-	ui.pill.Position = UDim2.fromOffset(panelPos.X, panelPos.Y)
+	ui.pill.Position  = UDim2.fromOffset(panelPos.X, panelPos.Y)
 end
 
 local function clampPanelPosition()
 	if not ui then return end
-
 	local area = ui.panelGui.AbsoluteSize
 	local maxX = math.max(8, area.X - panelSize.X - 8)
 	local maxY = math.max(8, area.Y - panelSize.Y - 8)
-
-	panelPos = Vector2.new(
-		math.clamp(panelPos.X, 8, maxX),
-		math.clamp(panelPos.Y, 8, maxY)
-	)
+	panelPos   = Vector2.new(math.clamp(panelPos.X, 8, maxX), math.clamp(panelPos.Y, 8, maxY))
 end
 
 local function updateLayout()
 	if closed or not ui then return end
-
-	local area = ui.panelGui.AbsoluteSize
-	local width = math.clamp(area.X - 24, 280, 420)
-	local height = math.clamp(area.Y - 24, 320, 650)
-
-	panelSize = Vector2.new(width, height)
+	local area   = ui.panelGui.AbsoluteSize
+	local width  = math.clamp(area.X - 16, 260, 420)
+	local height = math.clamp(area.Y - 16, 300, 650)
+	panelSize    = Vector2.new(width, height)
 	ui.panel.Size = UDim2.fromOffset(width, height)
-
 	clampPanelPosition()
 	applyPanelPosition()
 end
@@ -472,429 +463,319 @@ end
 local function buildGui()
 	local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 		or LocalPlayer:WaitForChild("PlayerGui", 10)
-
 	if closed or not playerGui then
-		if not playerGui then
-			warn("[HushScript] PlayerGui not found.")
-		end
+		if not playerGui then warn("[HushScript] PlayerGui not found; running without GUI.") end
 		return
 	end
 
-	for _, name in ipairs({
-		consts.OVERLAY_GUI_NAME,
-		consts.PANEL_GUI_NAME
-	}) do
+	for _, name in ipairs({ consts.OVERLAY_GUI_NAME, consts.PANEL_GUI_NAME }) do
 		local old = playerGui:FindFirstChild(name)
 		if old then old:Destroy() end
 	end
 
-	local Theme = consts.Theme
-	local FONT = consts.FONT
+	local Theme     = consts.Theme
+	local FONT      = consts.FONT
 	local FONT_BOLD = consts.FONT_BOLD
 	local TAB_NAMES = consts.TAB_NAMES
 
-	-- Premium palette
-	local BG = Color3.fromRGB(13, 16, 23)
-	local SURFACE = Color3.fromRGB(19, 23, 32)
-	local SURFACE_HOVER = Color3.fromRGB(27, 32, 44)
-	local HEADER = Color3.fromRGB(16, 20, 29)
-	local BORDER = Color3.fromRGB(43, 49, 64)
-	local MUTED = Color3.fromRGB(137, 146, 164)
-	local WHITE = Color3.fromRGB(235, 239, 248)
-	local ACCENT = Theme.Accent
-
-	-- OVERLAY
+	-- OVERLAY GUI
 	local overlayGui = create("ScreenGui", {
-		Name = consts.OVERLAY_GUI_NAME,
-		ResetOnSpawn = false,
+		Name           = consts.OVERLAY_GUI_NAME,
+		ResetOnSpawn   = false,
 		IgnoreGuiInset = true,
-		DisplayOrder = 999,
+		DisplayOrder   = 999,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	})
-
 	local espRoot = create("Frame", {
-		Name = "ESPRoot",
+		Name                  = "ESPRoot",
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Active = false,
-		Interactable = false,
-		Size = UDim2.fromScale(1, 1),
+		BorderSizePixel       = 0,
+		Active                = false,
+		Interactable          = false,
+		Size                  = UDim2.fromScale(1, 1),
 	}, overlayGui)
-
-	-- FOV RING
+	
 	local ring = create("Frame", {
-		Name = "FOVRing",
-		AnchorPoint = Vector2.new(0.5, 0.5),
+		Name                  = "FOVRing",
+		AnchorPoint           = Vector2.new(0.5, 0.5),
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Active = false,
-		Interactable = false,
-		Size = UDim2.fromOffset(
-			Config.FOVRadius * 2,
-			Config.FOVRadius * 2
-		),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Visible = false,
+		BorderSizePixel       = 0,
+		Active                = false,
+		Interactable          = false,
+		Size                  = UDim2.fromOffset(Config.FOVRadius * 2, Config.FOVRadius * 2),
+		Position              = UDim2.fromScale(0.5, 0.5),
+		Visible               = false,
 	}, overlayGui)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(1, 0),
-	}, ring)
-
+	create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, ring)
 	local ringStroke = create("UIStroke", {
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-		Thickness = Config.FOVThickness,
-		Color = Config.FOVColor,
-		Transparency = 1,
+		Thickness        = Config.FOVThickness,
+		Color            = Config.FOVColor,
+		Transparency     = 1,
 	}, ring)
-
 	displayRadius = Config.FOVRadius
 
-	-- MAIN GUI
+	-- MAIN PANEL GUI
 	local panelGui = create("ScreenGui", {
-		Name = consts.PANEL_GUI_NAME,
-		ResetOnSpawn = false,
+		Name           = consts.PANEL_GUI_NAME,
+		ResetOnSpawn   = false,
 		IgnoreGuiInset = false,
-		DisplayOrder = 1000,
+		DisplayOrder   = 1000,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	})
 
 	local panel = create("CanvasGroup", {
-		Name = "Panel",
-		BackgroundColor3 = BG,
-		BorderSizePixel = 0,
-		Active = true,
-		Size = UDim2.fromOffset(panelSize.X, panelSize.Y),
-		Position = UDim2.fromOffset(panelPos.X, panelPos.Y),
+		Name              = "Panel",
+		BackgroundColor3  = Theme.Panel,
+		BorderSizePixel   = 0,
+		Active            = true,
+		Size              = UDim2.fromOffset(panelSize.X, panelSize.Y),
+		Position          = UDim2.fromOffset(panelPos.X, panelPos.Y),
 		GroupTransparency = 1,
-		Visible = false,
+		Visible           = false,
 	}, panelGui)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(0, 15),
-	}, panel)
-
+	create("UICorner", { CornerRadius = UDim.new(0, 20) }, panel)
+	
+	-- Glowing border - Accent color
 	create("UIStroke", {
-		Color = BORDER,
-		Thickness = 1,
-		Transparency = 0.12,
+		Color = Theme.Accent,
+		Thickness = 2.5,
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		Transparency = 0.4,
 	}, panel)
 
-	-- HEADER
+	-- TITLE BAR
 	local titleBar = create("Frame", {
-		Name = "TitleBar",
-		BackgroundColor3 = HEADER,
-		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 0, 64),
+		Name             = "TitleBar",
+		BackgroundColor3 = Theme.Title,
+		BorderSizePixel  = 0,
+		Size             = UDim2.new(1, 0, 0, 60),
 	}, panel)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(0, 15),
-	}, titleBar)
-
-	-- Cover lower rounded corners of header
-	create("Frame", {
-		Name = "HeaderBottom",
-		BackgroundColor3 = HEADER,
-		BorderSizePixel = 0,
-		Position = UDim2.new(0, 0, 1, -15),
-		Size = UDim2.new(1, 0, 0, 15),
-	}, titleBar)
-
-	create("Frame", {
-		Name = "HeaderDivider",
-		BackgroundColor3 = BORDER,
-		BackgroundTransparency = 0.2,
-		BorderSizePixel = 0,
-		Position = UDim2.new(0, 15, 1, 0),
-		Size = UDim2.new(1, -30, 0, 1),
-	}, titleBar)
-
-	-- DRAG AREA
-	local dragHandle = create("Frame", {
-		Name = "DragHandle",
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Active = true,
-		Size = UDim2.new(1, -100, 1, 0),
-	}, titleBar)
-
-	-- LOGO
-	local logo = create("Frame", {
-		Name = "Logo",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 17, 0.5, 0),
-		Size = UDim2.fromOffset(30, 30),
-		BackgroundColor3 = ACCENT,
-		BorderSizePixel = 0,
-	}, dragHandle)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(0, 9),
-	}, logo)
-
+	
+	-- Gradient on title bar
 	create("UIGradient", {
 		Rotation = 45,
 		Color = ColorSequence.new(
-			ACCENT,
-			Theme.Accent2
+			Color3.fromRGB(15, 20, 35),
+			Color3.fromRGB(10, 15, 28)
 		),
+	}, titleBar)
+
+	local dragHandle = create("Frame", {
+		Name                  = "DragHandle",
+		BackgroundTransparency = 1,
+		BorderSizePixel       = 0,
+		Active                = true,
+		Size                  = UDim2.new(1, -90, 1, 0),
+	}, titleBar)
+
+	-- Logo - Glowing gradient box
+	local logo = create("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 16, 0.5, 0),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundColor3 = Theme.Accent,
+		BorderSizePixel = 0,
+	}, dragHandle)
+	create("UICorner", { CornerRadius = UDim.new(0, 8) }, logo)
+	create("UIGradient", {
+		Rotation = 45,
+		Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
+	}, logo)
+	create("UIStroke", {
+		Color = Theme.Accent3,
+		Thickness = 1.5,
+		Transparency = 0.3,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, logo)
 
 	create("TextLabel", {
-		Name = "LogoMark",
+		Name                  = "Title",
 		BackgroundTransparency = 1,
-		Size = UDim2.fromScale(1, 1),
-		Font = FONT_BOLD,
-		Text = "H",
-		TextSize = 17,
-		TextColor3 = WHITE,
-	}, logo)
-
-	-- TITLE
-	create("TextLabel", {
-		Name = "Title",
-		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(58, 9),
-		Size = UDim2.new(1, -62, 0, 25),
-		Font = FONT_BOLD,
-		Text = "HushScript",
-		TextSize = 16,
-		TextColor3 = WHITE,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		Active                = false,
+		Position              = UDim2.fromOffset(52, 0),
+		Size                  = UDim2.new(1, -52, 1, 0),
+		Font                  = FONT_BOLD,
+		TextSize              = 18,
+		TextColor3            = Theme.Accent,
+		TextXAlignment        = Enum.TextXAlignment.Left,
+		Text                  = "⚡ HushScript",
 	}, dragHandle)
 
-	create("TextLabel", {
-		Name = "AuthorCredit",
-		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(59, 33),
-		Size = UDim2.new(1, -62, 0, 15),
-		Font = FONT,
-		Text = "by nongsin",
-		TextSize = 10,
-		TextColor3 = MUTED,
-		TextXAlignment = Enum.TextXAlignment.Left,
-	}, dragHandle)
-
-	-- TITLE BUTTONS
-	local function makeTitleBtn(name, x, labelText, color)
+	-- Title buttons
+	local function makeTitleBtn(name, x, text, color)
 		local btn = create("TextButton", {
-			Name = name,
-			AnchorPoint = Vector2.new(0, 0.5),
-			Position = UDim2.new(1, x, 0.5, 0),
-			Size = UDim2.fromOffset(32, 32),
-			BackgroundColor3 = SURFACE,
-			BorderSizePixel = 0,
-			AutoButtonColor = false,
-			Font = FONT,
-			TextSize = 17,
-			TextColor3 = color,
-			Text = labelText,
+			Name             = name,
+			AnchorPoint      = Vector2.new(0, 0.5),
+			Position         = UDim2.new(1, x, 0.5, 0),
+			Size             = UDim2.fromOffset(36, 36),
+			BackgroundColor3 = Color3.fromRGB(20, 25, 40),
+			BorderSizePixel  = 0,
+			AutoButtonColor  = false,
+			Font             = FONT_BOLD,
+			TextSize         = 20,
+			TextColor3       = color,
+			Text             = text,
 		}, titleBar)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(0, 8),
+		create("UICorner", { CornerRadius = UDim.new(0, 10) }, btn)
+		local glow = create("UIStroke", {
+			Color = color,
+			Thickness = 1.5,
+			Transparency = 1,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 		}, btn)
-
-		local stroke = create("UIStroke", {
-			Color = BORDER,
-			Thickness = 1,
-			Transparency = 0.25,
-		}, btn)
-
+		
 		track(btn.MouseEnter:Connect(function()
-			tw(btn, 0.18, {
-				BackgroundColor3 = SURFACE_HOVER,
-			}, Enum.EasingStyle.Quad)
-
-			tw(stroke, 0.18, {
-				Color = color,
-				Transparency = 0.25,
-			}, Enum.EasingStyle.Quad)
+			tw(btn, 0.25, { BackgroundColor3 = Color3.fromRGB(30, 38, 65) }, Enum.EasingStyle.Back)
+			tw(glow, 0.3, { Transparency = 0.2 }, Enum.EasingStyle.Quad)
 		end))
-
 		track(btn.MouseLeave:Connect(function()
-			tw(btn, 0.22, {
-				BackgroundColor3 = SURFACE,
-			}, Enum.EasingStyle.Quad)
-
-			tw(stroke, 0.22, {
-				Color = BORDER,
-				Transparency = 0.25,
-			}, Enum.EasingStyle.Quad)
+			tw(btn, 0.35, { BackgroundColor3 = Color3.fromRGB(20, 25, 40) }, Enum.EasingStyle.Back)
+			tw(glow, 0.4, { Transparency = 1 }, Enum.EasingStyle.Quad)
 		end))
-
 		return btn
 	end
+	
+	local minButton   = makeTitleBtn("Minimize", -76, "−", Theme.SubText)
+	local closeButton = makeTitleBtn("Close",    -36, "✕", Theme.Danger)
 
-	local minButton = makeTitleBtn(
-		"Minimize", -72, "−", WHITE
-	)
-
-	local closeButton = makeTitleBtn(
-		"Close", -34, "×", Theme.Danger
-	)
-
-	-- STATUS
+	-- STATUS CARD
 	local statusFrame = create("Frame", {
-		Name = "Status",
-		BackgroundColor3 = SURFACE,
-		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(14, 76),
-		Size = UDim2.new(1, -28, 0, 38),
+		Name             = "Status",
+		BackgroundColor3 = Theme.Card,
+		BorderSizePixel  = 0,
+		Position         = UDim2.fromOffset(14, 70),
+		Size             = UDim2.new(1, -28, 0, 42),
 	}, panel)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(0, 9),
+	create("UICorner", { CornerRadius = UDim.new(0, 12) }, statusFrame)
+	
+	local statusGlow = create("UIStroke", {
+		Color = Theme.Good,
+		Thickness = 2,
+		Transparency = 0.4,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, statusFrame)
-
-	create("UIStroke", {
-		Color = BORDER,
-		Thickness = 1,
-		Transparency = 0.3,
-	}, statusFrame)
-
+	
+	-- Animated pulsing dot
 	local statusDot = create("Frame", {
-		Name = "StatusDot",
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 13, 0.5, 0),
-		Size = UDim2.fromOffset(7, 7),
+		AnchorPoint      = Vector2.new(0, 0.5),
+		Position         = UDim2.new(0, 14, 0.5, 0),
+		Size             = UDim2.fromOffset(12, 12),
 		BackgroundColor3 = Theme.Good,
-		BorderSizePixel = 0,
+		BorderSizePixel  = 0,
 	}, statusFrame)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(1, 0),
+	create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, statusDot)
+	create("UIStroke", {
+		Color = Theme.Good,
+		Thickness = 1,
+		Transparency = 0.2,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, statusDot)
 
 	local statusLabel = create("TextLabel", {
-		Name = "StatusLabel",
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(29, 0),
-		Size = UDim2.new(1, -40, 1, 0),
-		Font = FONT,
-		TextSize = 12,
-		TextColor3 = WHITE,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Text = "Initializing...",
-	}, statusFrame)
-
-	local statusGlow = create("UIStroke", {
-		Color = Theme.Good,
-		Thickness = 1,
-		Transparency = 0.65,
+		Position               = UDim2.fromOffset(38, 0),
+		Size                   = UDim2.new(1, -48, 1, 0),
+		Font                   = FONT,
+		TextSize               = 14,
+		TextColor3             = Theme.Text,
+		TextXAlignment         = Enum.TextXAlignment.Left,
+		TextTruncate           = Enum.TextTruncate.AtEnd,
+		Text                   = "Initializing…",
 	}, statusFrame)
 
 	-- MINIMIZED PILL
 	local pill = create("CanvasGroup", {
-		Name = "Minimized",
-		BackgroundColor3 = SURFACE,
-		BorderSizePixel = 0,
-		Size = UDim2.fromOffset(150, 44),
-		Position = UDim2.fromOffset(panelPos.X, panelPos.Y),
+		Name              = "Minimized",
+		BackgroundColor3  = Theme.Card,
+		BorderSizePixel   = 0,
+		Size              = UDim2.fromOffset(140, 44),
+		Position          = UDim2.fromOffset(panelPos.X, panelPos.Y),
 		GroupTransparency = 1,
-		Visible = false,
+		Visible           = false,
 	}, panelGui)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(0, 12),
-	}, pill)
-
+	create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, pill)
 	create("UIStroke", {
-		Color = BORDER,
-		Thickness = 1,
-		Transparency = 0.1,
+		Color = Theme.Accent,
+		Thickness = 2,
+		Transparency = 0.5,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, pill)
-
+	
 	local pillDot = create("Frame", {
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.5, 0),
-		Size = UDim2.fromOffset(7, 7),
-		BackgroundColor3 = ACCENT,
-		BorderSizePixel = 0,
+		AnchorPoint      = Vector2.new(0, 0.5),
+		Position         = UDim2.new(0, 14, 0.5, 0),
+		Size             = UDim2.fromOffset(12, 12),
+		BackgroundColor3 = Theme.Good,
+		BorderSizePixel  = 0,
 	}, pill)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(1, 0),
-	}, pillDot)
+	create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, pillDot)
 
 	create("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(29, 0),
-		Size = UDim2.new(1, -40, 1, 0),
-		Font = FONT_BOLD,
-		TextSize = 13,
-		TextColor3 = WHITE,
-		Text = "HushScript",
-		TextXAlignment = Enum.TextXAlignment.Left,
+		Position               = UDim2.fromOffset(36, 0),
+		Size                   = UDim2.new(1, -46, 1, 0),
+		Font                   = FONT_BOLD,
+		TextSize               = 14,
+		TextColor3             = Theme.Accent,
+		TextXAlignment         = Enum.TextXAlignment.Left,
+		Text                   = "HushScript",
 	}, pill)
-
+	
 	local pillButton = create("TextButton", {
-		Name = "Restore",
+		Name                  = "Restore",
 		BackgroundTransparency = 1,
-		Size = UDim2.fromScale(1, 1),
-		Text = "",
-		AutoButtonColor = false,
+		Size                  = UDim2.fromScale(1, 1),
+		Text                  = "",
+		AutoButtonColor       = false,
 	}, pill)
 
 	track(pillButton.MouseEnter:Connect(function()
-		tw(pill, 0.18, {
-			BackgroundColor3 = SURFACE_HOVER,
-		}, Enum.EasingStyle.Quad)
+		tw(pill, 0.25, { BackgroundColor3 = Theme.CardHover }, Enum.EasingStyle.Back)
 	end))
-
 	track(pillButton.MouseLeave:Connect(function()
-		tw(pill, 0.22, {
-			BackgroundColor3 = SURFACE,
-		}, Enum.EasingStyle.Quad)
+		tw(pill, 0.3, { BackgroundColor3 = Theme.Card }, Enum.EasingStyle.Back)
 	end))
 
-	-- REGISTER UI
 	ui = {
-		overlayGui = overlayGui,
-		espRoot = espRoot,
-		ring = ring,
-		ringStroke = ringStroke,
-		panelGui = panelGui,
-		panel = panel,
-		pill = pill,
-		statusDot = statusDot,
-		statusLabel = statusLabel,
-		statusGlow = statusGlow,
-		pillDot = pillDot,
-		statsLabel = nil,
+		overlayGui    = overlayGui,
+		espRoot       = espRoot,
+		ring          = ring,
+		ringStroke    = ringStroke,
+		panelGui      = panelGui,
+		panel         = panel,
+		pill          = pill,
+		statusDot     = statusDot,
+		statusLabel   = statusLabel,
+		statusGlow    = statusGlow,
+		pillDot       = pillDot,
+		statsLabel    = nil,
 	}
 
-	-- CROSSHAIR
+	-- Crosshair
 	local crosshair = create("Frame", {
-		Name = "Crosshair",
+		Name                  = "Crosshair",
 		BackgroundTransparency = 1,
-		Size = UDim2.fromScale(1, 1),
-		Visible = false,
+		Size                  = UDim2.fromScale(1, 1),
+		Visible               = false,
 	}, overlayGui)
-
 	local crosshairLines = {}
-
 	for i = 1, 4 do
 		crosshairLines[i] = create("Frame", {
 			BackgroundColor3 = Config.CrosshairColor,
-			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0.5, 0.5),
+			BorderSizePixel  = 0,
+			AnchorPoint      = Vector2.new(0.5, 0.5),
 		}, crosshair)
 	end
-
-	ui.crosshair = crosshair
+	ui.crosshair      = crosshair
 	ui.crosshairLines = crosshairLines
 
-	if monsterESP then
-		monsterESP.espRoot = espRoot
-		monsterESP.camera = camera
-	end
+	if monsterESP then monsterESP.espRoot = espRoot; monsterESP.camera = camera end
 
+	------------------------------------------------------------------------
 	-- TAB SYSTEM
-	local pages = {}
+	------------------------------------------------------------------------
+	local pages      = {}
 	local tabButtons = {}
 	local currentPage = nil
 	local selectedTab = nil
@@ -902,139 +783,101 @@ local function buildGui()
 	local function selectTab(name, instant)
 		endDrag()
 		selectedTab = name
-
 		for pageName, page in pairs(pages) do
 			page.frame.Visible = pageName == name
 		end
-
 		for tabName, button in pairs(tabButtons) do
-			local selected = tabName == name
-
-			tw(button, instant and 0 or 0.2, {
-				TextColor3 = selected and WHITE or MUTED,
-				BackgroundColor3 = selected and SURFACE_HOVER or SURFACE,
+			local sel = tabName == name
+			tw(button, 0.3, {
+				TextColor3 = sel and Theme.Accent or Theme.SubText,
+				BackgroundColor3 = sel and Color3.fromRGB(25, 32, 55) or Theme.Card,
 			}, Enum.EasingStyle.Quad)
 		end
 	end
 
-	-- TAB BAR
+	-- Tab bar
 	local tabBar = create("Frame", {
-		Name = "Tabs",
-		BackgroundColor3 = HEADER,
-		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(14, 124),
-		Size = UDim2.new(1, -28, 0, 40),
+		Name                  = "Tabs",
+		BackgroundColor3      = Theme.Card,
+		BorderSizePixel       = 0,
+		Position              = UDim2.fromOffset(14, 118),
+		Size                  = UDim2.new(1, -28, 0, 44),
 	}, panel)
-
-	create("UICorner", {
-		CornerRadius = UDim.new(0, 9),
-	}, tabBar)
-
-	create("UIStroke", {
-		Color = BORDER,
-		Thickness = 1,
-		Transparency = 0.35,
-	}, tabBar)
+	create("UICorner", { CornerRadius = UDim.new(0, 12) }, tabBar)
 
 	for index, name in ipairs(TAB_NAMES) do
 		local button = create("TextButton", {
-			Name = name,
-			Position = UDim2.new(
-				(index - 1) / #TAB_NAMES, 4, 0, 4
-			),
-			Size = UDim2.new(1 / #TAB_NAMES, -8, 1, -8),
-			BackgroundColor3 = SURFACE,
-			BorderSizePixel = 0,
-			AutoButtonColor = false,
-			Font = FONT,
-			TextSize = 11,
-			TextColor3 = MUTED,
-			Text = name,
+			Name             = name,
+			Position         = UDim2.new((index - 1) / #TAB_NAMES, 5, 0, 5),
+			Size             = UDim2.new(1 / #TAB_NAMES, -10, 1, -10),
+			BackgroundColor3 = Theme.Card,
+			BorderSizePixel  = 0,
+			AutoButtonColor  = false,
+			Font             = FONT_BOLD,
+			TextSize         = 12,
+			TextColor3       = Theme.SubText,
+			Text             = name,
 		}, tabBar)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(0, 7),
-		}, button)
-
+		create("UICorner", { CornerRadius = UDim.new(0, 8) }, button)
 		tabButtons[name] = button
-
-		track(button.Activated:Connect(function()
-			selectTab(name, false)
-		end))
-
+		
+		track(button.Activated:Connect(function() selectTab(name) end))
 		track(button.MouseEnter:Connect(function()
 			if selectedTab ~= name then
-				tw(button, 0.16, {
-					BackgroundColor3 = SURFACE_HOVER,
-				}, Enum.EasingStyle.Quad)
+				tw(button, 0.25, { BackgroundColor3 = Color3.fromRGB(22, 28, 48) }, Enum.EasingStyle.Quad)
 			end
 		end))
-
 		track(button.MouseLeave:Connect(function()
 			if selectedTab ~= name then
-				tw(button, 0.2, {
-					BackgroundColor3 = SURFACE,
-				}, Enum.EasingStyle.Quad)
+				tw(button, 0.3, { BackgroundColor3 = Theme.Card }, Enum.EasingStyle.Quad)
 			end
 		end))
 	end
 
-	-- PAGE CREATOR
 	local function newPage(name)
 		local frame = create("ScrollingFrame", {
-			Name = name,
+			Name                 = name,
 			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			Position = UDim2.fromOffset(0, 174),
-			Size = UDim2.new(1, 0, 1, -174),
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			ScrollBarThickness = 3,
-			ScrollBarImageColor3 = ACCENT,
-			ScrollingDirection = Enum.ScrollingDirection.Y,
-			ElasticBehavior = Enum.ElasticBehavior.Never,
-			Visible = false,
+			BorderSizePixel      = 0,
+			Position             = UDim2.fromOffset(0, 168),
+			Size                 = UDim2.new(1, 0, 1, -168),
+			CanvasSize           = UDim2.new(),
+			AutomaticCanvasSize  = Enum.AutomaticSize.Y,
+			ScrollBarThickness   = 4,
+			ScrollBarImageColor3 = Theme.Accent,
+			ScrollingDirection   = Enum.ScrollingDirection.Y,
+			ElasticBehavior      = Enum.ElasticBehavior.Never,
+			Visible              = false,
 		}, panel)
-
 		create("UIListLayout", {
-			Padding = UDim.new(0, 8),
+			Padding = UDim.new(0, 10),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		}, frame)
-
 		create("UIPadding", {
-			PaddingLeft = UDim.new(0, 14),
-			PaddingRight = UDim.new(0, 14),
-			PaddingTop = UDim.new(0, 12),
+			PaddingLeft   = UDim.new(0, 12),
+			PaddingRight  = UDim.new(0, 12),
+			PaddingTop    = UDim.new(0, 8),
 			PaddingBottom = UDim.new(0, 20),
 		}, frame)
-
-		local page = {
-			frame = frame,
-			order = 0,
-		}
-
+		local page = { frame = frame, order = 0 }
 		pages[name] = page
 		currentPage = page
-
 		return page
 	end
 
-	local function nextOrder()
-		currentPage.order += 1
-		return currentPage.order
-	end
+	local function nextOrder() currentPage.order += 1; return currentPage.order end
 
 	local function makeSection(text)
 		create("TextLabel", {
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 23),
+			Size = UDim2.new(1, 0, 0, 20),
 			LayoutOrder = nextOrder(),
 			Font = FONT_BOLD,
-			TextSize = 10,
-			TextColor3 = ACCENT,
+			TextSize = 12,
+			TextColor3 = Theme.Accent,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Text = string.upper(text),
+			Text = "▸ " .. string.upper(text),
 		}, currentPage.frame)
 	end
 
@@ -1045,7 +888,7 @@ local function buildGui()
 			LayoutOrder = nextOrder(),
 			Font = FONT,
 			TextSize = 11,
-			TextColor3 = MUTED,
+			TextColor3 = Theme.SubText,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
@@ -1055,53 +898,38 @@ local function buildGui()
 
 	local function makeRow(height)
 		local row = create("Frame", {
-			BackgroundColor3 = SURFACE,
+			BackgroundColor3 = Theme.Card,
 			BorderSizePixel = 0,
 			Size = UDim2.new(1, 0, 0, height),
 			LayoutOrder = nextOrder(),
 		}, currentPage.frame)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(0, 9),
+		create("UICorner", { CornerRadius = UDim.new(0, 11) }, row)
+		local rowGlow = create("UIStroke", {
+			Color = Theme.Accent,
+			Thickness = 1.2,
+			Transparency = 1,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 		}, row)
-
-		local stroke = create("UIStroke", {
-			Color = BORDER,
-			Thickness = 1,
-			Transparency = 0.5,
-		}, row)
-
+		
 		track(row.MouseEnter:Connect(function()
-			tw(row, 0.16, {
-				BackgroundColor3 = SURFACE_HOVER,
-			}, Enum.EasingStyle.Quad)
-
-			tw(stroke, 0.16, {
-				Transparency = 0.15,
-			}, Enum.EasingStyle.Quad)
+			tw(row, 0.22, { BackgroundColor3 = Theme.CardHover }, Enum.EasingStyle.Quad)
+			tw(rowGlow, 0.28, { Transparency = 0.4 }, Enum.EasingStyle.Quad)
 		end))
-
 		track(row.MouseLeave:Connect(function()
-			tw(row, 0.2, {
-				BackgroundColor3 = SURFACE,
-			}, Enum.EasingStyle.Quad)
-
-			tw(stroke, 0.2, {
-				Transparency = 0.5,
-			}, Enum.EasingStyle.Quad)
+			tw(row, 0.32, { BackgroundColor3 = Theme.Card }, Enum.EasingStyle.Back)
+			tw(rowGlow, 0.4, { Transparency = 1 }, Enum.EasingStyle.Back)
 		end))
-
 		return row
 	end
 
 	local function makeRowLabel(row, text, reserve)
 		return create("TextLabel", {
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(13, 0),
-			Size = UDim2.new(1, -(reserve or 110), 1, 0),
+			Position = UDim2.fromOffset(16, 0),
+			Size = UDim2.new(1, -(reserve or 110), 0, 42),
 			Font = FONT,
-			TextSize = 12,
-			TextColor3 = WHITE,
+			TextSize = 13,
+			TextColor3 = Theme.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			Text = text,
@@ -1109,166 +937,115 @@ local function buildGui()
 	end
 
 	local function styleBox(box)
-		create("UICorner", {
-			CornerRadius = UDim.new(0, 7),
-		}, box)
-
-		create("UIStroke", {
-			Color = BORDER,
-			Thickness = 1,
-			Transparency = 0.2,
-		}, box)
+		create("UICorner", { CornerRadius = UDim.new(0, 8) }, box)
 	end
 
-	-- TOGGLES
 	local function makeToggle(text, getter, setter)
 		local row = makeRow(44)
 		makeRowLabel(row, text)
-
 		local switch = create("TextButton", {
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -12, 0.5, 0),
-			Size = UDim2.fromOffset(40, 23),
-			BackgroundColor3 = BORDER,
+			Position = UDim2.new(1, -16, 0.5, 0),
+			Size = UDim2.fromOffset(48, 28),
+			BackgroundColor3 = Theme.SwitchOff,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			Text = "",
 		}, row)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(1, 0),
-		}, switch)
-
+		create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, switch)
+		
 		local knob = create("Frame", {
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(0, 3, 0.5, 0),
-			Size = UDim2.fromOffset(17, 17),
-			BackgroundColor3 = WHITE,
+			Size = UDim2.fromOffset(22, 22),
+			BackgroundColor3 = Theme.White,
 			BorderSizePixel = 0,
 		}, switch)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(1, 0),
-		}, knob)
-
+		create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, knob)
+		
 		local first = true
-
 		local function refresh()
 			local on = getter() == true
-			local color = on and ACCENT or BORDER
-			local pos = on
-				and UDim2.new(1, -20, 0.5, 0)
-				or UDim2.new(0, 3, 0.5, 0)
-
+			local col = on and Theme.Good or Theme.SwitchOff
+			local pos = on and UDim2.new(1, -25, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
 			if first then
 				first = false
-				switch.BackgroundColor3 = color
+				switch.BackgroundColor3 = col
 				knob.Position = pos
 			else
-				tw(switch, 0.2, {
-					BackgroundColor3 = color,
-				}, Enum.EasingStyle.Quad)
-
-				tw(knob, 0.24, {
-					Position = pos,
-				}, Enum.EasingStyle.Quart)
+				tw(switch, 0.35, { BackgroundColor3 = col }, Enum.EasingStyle.Back)
+				tw(knob, 0.45, { Position = pos }, Enum.EasingStyle.Back)
 			end
 		end
-
 		table.insert(refreshers, refresh)
-
 		track(switch.Activated:Connect(function()
-			setter(not (getter() == true))
+			setter(not(getter() == true))
 			syncUI()
 		end))
-
 		refresh()
 	end
 
 	local function makeConfigToggle(text, key, onChange)
-		makeToggle(text, function()
-			return Config[key]
-		end, function(value)
-			Config[key] = value
-			if onChange then onChange(value) end
+		makeToggle(text, function() return Config[key] end, function(v)
+			Config[key] = v
+			if onChange then onChange(v) end
 		end)
 	end
 
-	-- ACTION BUTTON
 	local function makeAction(text, callback)
-		local row = makeRow(46)
-
+		local row = makeRow(48)
 		local button = create("TextButton", {
-			Size = UDim2.new(1, -20, 0, 32),
-			Position = UDim2.fromOffset(10, 7),
-			BackgroundColor3 = SURFACE_HOVER,
+			Size = UDim2.new(1, -28, 0, 36),
+			Position = UDim2.fromOffset(14, 6),
+			BackgroundColor3 = Theme.Accent,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			Font = FONT_BOLD,
-			TextSize = 12,
-			TextColor3 = WHITE,
+			TextSize = 14,
+			TextColor3 = Theme.OnAccent,
 			Text = text,
 		}, row)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(0, 7),
+		create("UICorner", { CornerRadius = UDim.new(0, 10) }, button)
+		create("UIGradient", {
+			Rotation = 45,
+			Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
 		}, button)
-
-		local stroke = create("UIStroke", {
-			Color = BORDER,
-			Thickness = 1,
-			Transparency = 0.2,
-		}, button)
-
-		track(button.MouseEnter:Connect(function()
-			tw(button, 0.16, {
-				BackgroundColor3 = ACCENT,
-			}, Enum.EasingStyle.Quad)
-
-			tw(stroke, 0.16, {
-				Transparency = 0.7,
-			}, Enum.EasingStyle.Quad)
-		end))
-
-		track(button.MouseLeave:Connect(function()
-			tw(button, 0.2, {
-				BackgroundColor3 = SURFACE_HOVER,
-			}, Enum.EasingStyle.Quad)
-
-			tw(stroke, 0.2, {
-				Transparency = 0.2,
-			}, Enum.EasingStyle.Quad)
-		end))
-
+		
+		local buttonScale = create("UIScale", { Scale = 1 }, button)
+		track(button.MouseButton1Down:Connect(function() tw(buttonScale, 0.12, { Scale = 0.92 }, Enum.EasingStyle.Quad) end))
+		track(button.MouseButton1Up:Connect(function() tw(buttonScale, 0.28, { Scale = 1 }, Enum.EasingStyle.Back) end))
+		track(button.MouseLeave:Connect(function() tw(buttonScale, 0.2, { Scale = 1 }, Enum.EasingStyle.Back) end))
 		track(button.Activated:Connect(callback))
 	end
 
-	-- CYCLE BUTTON
 	local function makeCycle(text, key, options)
 		local row = makeRow(44)
-		makeRowLabel(row, text, 125)
-
+		makeRowLabel(row, text, 135)
 		local button = create("TextButton", {
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -12, 0.5, 0),
-			Size = UDim2.fromOffset(112, 29),
-			BackgroundColor3 = HEADER,
+			Position = UDim2.new(1, -14, 0.5, 0),
+			Size = UDim2.fromOffset(120, 32),
+			BackgroundColor3 = Theme.Card,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			Font = FONT,
-			TextSize = 11,
-			TextColor3 = WHITE,
+			TextSize = 13,
+			TextColor3 = Theme.Accent,
 			Text = tostring(Config[key]),
 		}, row)
-
 		styleBox(button)
-
-		local function refresh()
-			button.Text = tostring(Config[key])
-		end
-
-		table.insert(refreshers, refresh)
-
+		create("UIStroke", {
+			Color = Theme.Accent,
+			Thickness = 1.2,
+			Transparency = 0.6,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		}, button)
+		
+		local btnScale = create("UIScale", { Scale = 1 }, button)
+		track(button.MouseButton1Down:Connect(function() tw(btnScale, 0.1, { Scale = 0.94 }, Enum.EasingStyle.Quad) end))
+		track(button.MouseButton1Up:Connect(function() tw(btnScale, 0.24, { Scale = 1 }, Enum.EasingStyle.Back) end))
+		
+		table.insert(refreshers, function() button.Text = tostring(Config[key]) end)
 		track(button.Activated:Connect(function()
 			local idx = table.find(options, Config[key]) or 0
 			Config[key] = options[idx % #options + 1]
@@ -1276,331 +1053,259 @@ local function buildGui()
 		end))
 	end
 
-	-- KEY BIND
 	local function makeBind(text, key, allowClear)
 		local row = makeRow(44)
-		makeRowLabel(row, text, 125)
-
+		makeRowLabel(row, text, 135)
 		local button = create("TextButton", {
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -12, 0.5, 0),
-			Size = UDim2.fromOffset(112, 29),
-			BackgroundColor3 = HEADER,
+			Position = UDim2.new(1, -14, 0.5, 0),
+			Size = UDim2.fromOffset(120, 32),
+			BackgroundColor3 = Theme.Card,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			Font = FONT,
-			TextSize = 11,
-			TextColor3 = ACCENT,
+			TextSize = 13,
+			TextColor3 = Theme.Accent,
 			Text = "",
 		}, row)
-
 		styleBox(button)
-
+		local bindStroke = create("UIStroke", {
+			Color = Theme.Accent,
+			Thickness = 1.2,
+			Transparency = 0.6,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		}, button)
+		
 		local function refresh()
-			local listening = listeningBind
-				and listeningBind.key == key
-
-			button.Text = listening
-				and "Press key..."
-				or Utilities.bindingName(Config[key])
-
-			button.TextColor3 = listening and Theme.Warn or ACCENT
+			local listening = listeningBind and listeningBind.key == key
+			button.Text = listening and "Press key…" or Utilities.bindingName(Config[key])
+			tw(bindStroke, 0.28, { Transparency = listening and 0 or 0.6 }, Enum.EasingStyle.Quad)
+			tw(button, 0.28, { TextColor3 = listening and Theme.Warn or Theme.Accent }, Enum.EasingStyle.Quad)
 		end
-
 		table.insert(refreshers, refresh)
-
 		track(button.Activated:Connect(function()
-			listeningBind =
-				(listeningBind and listeningBind.key == key)
-				and nil
-				or {
-					key = key,
-					allowClear = allowClear,
-				}
-
+			listeningBind = (listeningBind and listeningBind.key == key) and nil
+				or { key = key, allowClear = allowClear }
 			syncUI()
 		end))
-
 		refresh()
 	end
 
-	-- SLIDER
-	local function makeSlider(
-		text, key, minValue, maxValue,
-		step, decimals, fineStep
-	)
-		local row = makeRow(66)
-		makeRowLabel(row, text, 100)
-
-		local precision = math.clamp(
-			math.floor(tonumber(decimals) or 0),
-			0, 6
-		)
-
+	local function makeSlider(text, key, minValue, maxValue, step, decimals, fineStep)
+		local row = makeRow(68)
+		makeRowLabel(row, text)
+		local precision = math.clamp(math.floor(tonumber(decimals) or 0), 0, 6)
 		local format = "%." .. tostring(precision) .. "f"
 
 		local valueBox = create("TextBox", {
 			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -12, 0, 7),
-			Size = UDim2.fromOffset(68, 25),
-			BackgroundColor3 = HEADER,
+			Position = UDim2.new(1, -14, 0, 10),
+			Size = UDim2.fromOffset(74, 28),
+			BackgroundColor3 = Theme.Card,
 			BorderSizePixel = 0,
 			Font = FONT,
-			TextSize = 11,
-			TextColor3 = ACCENT,
+			TextSize = 13,
+			TextColor3 = Theme.Accent,
 			ClearTextOnFocus = false,
 			Text = "",
 		}, row)
-
 		styleBox(valueBox)
+		local boxStroke = create("UIStroke", {
+			Color = Theme.Accent,
+			Thickness = 1.5,
+			Transparency = 0.8,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		}, valueBox)
+		track(valueBox.Focused:Connect(function() tw(boxStroke, 0.25, { Transparency = 0.1 }, Enum.EasingStyle.Quad) end))
+		track(valueBox.FocusLost:Connect(function() tw(boxStroke, 0.3, { Transparency = 0.8 }, Enum.EasingStyle.Quad) end))
 
 		local hit = create("Frame", {
 			BackgroundTransparency = 1,
 			Active = true,
-			Position = UDim2.fromOffset(12, 39),
-			Size = UDim2.new(1, -24, 0, 19),
+			Position = UDim2.fromOffset(16, 44),
+			Size = UDim2.new(1, -30, 0, 20),
 		}, row)
-
+		
 		local bar = create("Frame", {
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(0, 0, 0.5, 0),
-			Size = UDim2.new(1, 0, 0, 4),
-			BackgroundColor3 = BORDER,
+			Size = UDim2.new(1, 0, 0, 5),
+			BackgroundColor3 = Theme.SwitchOff,
 			BorderSizePixel = 0,
 		}, hit)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(1, 0),
-		}, bar)
-
+		create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, bar)
+		
 		local fill = create("Frame", {
 			Size = UDim2.fromScale(0, 1),
-			BackgroundColor3 = ACCENT,
+			BackgroundColor3 = Theme.Accent,
 			BorderSizePixel = 0,
 		}, bar)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(1, 0),
+		create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, fill)
+		create("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new(Theme.Accent, Theme.Accent2),
 		}, fill)
-
+		
 		local knob = create("Frame", {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0, 0, 0.5, 0),
-			Size = UDim2.fromOffset(13, 13),
-			BackgroundColor3 = WHITE,
+			Size = UDim2.fromOffset(18, 18),
+			BackgroundColor3 = Theme.White,
 			BorderSizePixel = 0,
 		}, hit)
-
-		create("UICorner", {
-			CornerRadius = UDim.new(1, 0),
+		create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, knob)
+		local knobGlow = create("UIStroke", {
+			Color = Theme.Accent,
+			Thickness = 2.5,
+			Transparency = 0.5,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 		}, knob)
-
-		create("UIStroke", {
-			Color = ACCENT,
-			Thickness = 1.5,
-			Transparency = 0.25,
-		}, knob)
+		
+		track(hit.MouseEnter:Connect(function()
+			tw(knobGlow, 0.25, { Transparency = 0.1 }, Enum.EasingStyle.Quad)
+		end))
+		track(hit.MouseLeave:Connect(function()
+			tw(knobGlow, 0.3, { Transparency = 0.5 }, Enum.EasingStyle.Quad)
+		end))
 
 		local function applyValue(value, snap)
-			local v = Utilities.clampNumber(
-				value, minValue, maxValue, Config[key]
-			)
-
+			local v = Utilities.clampNumber(value, minValue, maxValue, Config[key])
 			v = math.floor(v / snap + 0.5) * snap
 			Config[key] = math.clamp(v, minValue, maxValue)
-
 			markStyleDirty()
 			schedSave()
 		end
-
 		local function refresh()
-			local v = Utilities.clampNumber(
-				Config[key], minValue, maxValue, minValue
-			)
-
+			local v = Utilities.clampNumber(Config[key], minValue, maxValue, minValue)
 			local fr = (v - minValue) / (maxValue - minValue)
-
 			fill.Size = UDim2.fromScale(fr, 1)
 			knob.Position = UDim2.new(fr, 0, 0.5, 0)
-
 			if not valueBox:IsFocused() then
-				valueBox.Text = string.format(format, v)
+				valueBox.Text = string.format(format, tonumber(v) or 0)
 			end
 		end
-
 		table.insert(refreshers, refresh)
-
+		
 		local function fromX(x)
-			local width = hit.AbsoluteSize.X
-			if width <= 0 then return end
-
-			applyValue(
-				minValue + (maxValue - minValue)
-					* math.clamp(
-						(x - hit.AbsolutePosition.X) / width,
-						0, 1
-					),
-				step
-			)
-
+			local w = hit.AbsoluteSize.X
+			if w <= 0 then return end
+			applyValue(minValue + (maxValue - minValue) * math.clamp((x - hit.AbsolutePosition.X) / w, 0, 1), step)
 			refresh()
 		end
-
+		
 		track(hit.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1
 				or input.UserInputType == Enum.UserInputType.Touch then
-
-				beginDrag(function(pos)
-					fromX(pos.X)
-				end, input, currentPage.frame)
+				beginDrag(function(pos) fromX(pos.X) end, input, currentPage.frame)
 			end
 		end))
-
 		track(valueBox.FocusLost:Connect(function()
 			local n = tonumber(valueBox.Text)
-
-			if n then
-				applyValue(n, fineStep or step)
-			end
-
+			if n then applyValue(n, fineStep or step) end
 			refresh()
 		end))
-
 		refresh()
 	end
 
-	-- COLOR PICKER
 	local function makeColorRow(text, key)
-		local row = makeRow(92)
-		makeRowLabel(row, text, 100)
-
+		local row = makeRow(98)
+		makeRowLabel(row, text)
 		local hexBox = create("TextBox", {
 			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -12, 0, 7),
-			Size = UDim2.fromOffset(72, 25),
-			BackgroundColor3 = HEADER,
+			Position = UDim2.new(1, -14, 0, 10),
+			Size = UDim2.fromOffset(74, 28),
+			BackgroundColor3 = Theme.Card,
 			BorderSizePixel = 0,
 			Font = FONT,
-			TextSize = 11,
-			TextColor3 = ACCENT,
+			TextSize = 13,
+			TextColor3 = Theme.Accent,
 			ClearTextOnFocus = false,
 			Text = "",
 		}, row)
-
 		styleBox(hexBox)
-
+		local hexStroke = create("UIStroke", {
+			Color = Theme.Accent,
+			Thickness = 1.5,
+			Transparency = 0.8,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+		}, hexBox)
+		track(hexBox.Focused:Connect(function() tw(hexStroke, 0.25, { Transparency = 0.1 }, Enum.EasingStyle.Quad) end))
+		track(hexBox.FocusLost:Connect(function() tw(hexStroke, 0.3, { Transparency = 0.8 }, Enum.EasingStyle.Quad) end))
+		
 		local holder = create("Frame", {
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(12, 45),
-			Size = UDim2.new(1, -24, 0, 29),
+			Position = UDim2.fromOffset(16, 50),
+			Size = UDim2.new(1, -30, 0, 32),
 		}, row)
-
 		create("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
-			Padding = UDim.new(0, 7),
+			Padding = UDim.new(0, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 		}, holder)
-
+		
 		local swatchStrokes = {}
-
 		for index, color in ipairs(consts.SWATCHES or {}) do
 			local swatch = create("TextButton", {
 				LayoutOrder = index,
-				Size = UDim2.fromOffset(24, 24),
+				Size = UDim2.fromOffset(28, 28),
 				BackgroundColor3 = color,
 				BorderSizePixel = 0,
 				AutoButtonColor = false,
 				Text = "",
 			}, holder)
-
-			create("UICorner", {
-				CornerRadius = UDim.new(1, 0),
-			}, swatch)
-
-			swatchStrokes[index] = create("UIStroke", {
-				Color = WHITE,
-				Thickness = 1.5,
+			create("UICorner", { CornerRadius = UDim.new(0.5, 0) }, swatch)
+			local swatchStroke = create("UIStroke", {
+				Color = Theme.Accent,
+				Thickness = 2.5,
 				Transparency = 1,
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 			}, swatch)
-
-			track(swatch.Activated:Connect(function()
-				Config[key] = color
-				syncUI()
-			end))
+			swatchStrokes[index] = swatchStroke
+			track(swatch.Activated:Connect(function() Config[key] = color; syncUI() end))
 		end
-
+		
 		local function refresh()
 			local hex = Config[key]:ToHex()
-
-			for i, color in ipairs(consts.SWATCHES or {}) do
-				swatchStrokes[i].Transparency =
-					color:ToHex() == hex and 0 or 1
+			for i, col in ipairs(consts.SWATCHES or {}) do
+				tw(swatchStrokes[i], 0.25, { Transparency = col:ToHex() == hex and 0 or 1 }, Enum.EasingStyle.Quad)
 			end
-
-			if not hexBox:IsFocused() then
-				hexBox.Text = "#" .. string.upper(hex)
-			end
+			if not hexBox:IsFocused() then hexBox.Text = "#" .. string.upper(hex) end
 		end
-
 		table.insert(refreshers, refresh)
-
 		track(hexBox.FocusLost:Connect(function()
-			local cleaned = string.gsub(
-				hexBox.Text, "[#%s]", ""
-			)
-
-			if #cleaned == 6
-				and not string.find(cleaned, "%X") then
-
+			local cleaned = string.gsub(hexBox.Text, "[#%s]", "")
+			if #cleaned == 6 and not string.find(cleaned, "%X") then
 				local ok, color = pcall(Color3.fromHex, cleaned)
-
-				if ok and typeof(color) == "Color3" then
-					Config[key] = color
-				end
+				if ok and typeof(color) == "Color3" then Config[key] = color end
 			end
-
 			syncUI()
 		end))
-
 		refresh()
 	end
 
-	-- AIM PAGE
+	-- PAGE CONTENTS
 	newPage("Aim")
-
 	makeSection("Assist")
-	makeToggle("Aim assist enabled",
-		function() return Config.Enabled end,
-		function(v) targetAssist:setEnabled(v, syncUI) end
-	)
-
-	makeCycle("Activation mode", "ActivationMode",
-		{ "Hold", "Toggle" })
-	makeCycle("Target part", "TargetPart",
-		{ "Head", "UpperTorso", "HumanoidRootPart" })
-	makeCycle("Priority", "SelectionPriority",
-		{ "Crosshair", "Distance", "Health" })
-
-	makeSection("Range & Motion")
+	makeToggle("Aim assist enabled", function() return Config.Enabled end, function(v) targetAssist:setEnabled(v, syncUI) end)
+	makeCycle("Activation mode", "ActivationMode", { "Hold", "Toggle" })
+	makeCycle("Target part", "TargetPart", { "Head", "UpperTorso", "HumanoidRootPart" })
+	makeCycle("Priority", "SelectionPriority", { "Crosshair", "Distance", "Health" })
+	makeSection("Range and motion")
 	makeSlider("FOV radius (px)", "FOVRadius", 30, 400, 5, 0, 1)
-	makeSlider("Smoothing", "CameraSmoothing", 0, 30, 0.5, 1)
+	makeSlider("Smoothing (higher = faster)", "CameraSmoothing", 0, 30, 0.5, 1)
 	makeSlider("Aim distance (studs)", "MaxDistance", 50, 5000, 50, 0, 1)
-
 	makeSection("Behaviour")
 	makeConfigToggle("Target lock", "TargetLock")
 	makeConfigToggle("Visibility check", "VisibilityCheck")
-	makeConfigToggle("Prediction", "Prediction",
-		function() targetAssist:resetPrediction() end)
+	makeConfigToggle("Prediction", "Prediction", function() targetAssist:resetPrediction() end)
 	makeSlider("Prediction lead (s)", "PredictionFactor", 0, 0.5, 0.01, 2)
 
-	-- ESP PAGE
 	newPage("ESP")
 	makeSection("ESP")
 	makeConfigToggle("ESP enabled", "ESPEnabled")
-	makeSlider("Max distance", "ESPMaxDistance", 0, 20000, 100, 0, 1)
-
-	makeSection("Display")
+	makeSlider("Max distance (0 - 20000)", "ESPMaxDistance", 0, 20000, 100, 0, 1)
+	makeSection("Show")
 	makeConfigToggle("Name", "ESPShowName")
 	makeConfigToggle("Distance", "ESPShowDistance")
 	makeConfigToggle("Health", "ESPShowHealth")
@@ -1608,7 +1313,6 @@ local function buildGui()
 	makeConfigToggle("Look direction line", "ESPShowLookLine")
 	makeConfigToggle("Head circle", "ESPShowHeadCircle")
 	makeConfigToggle("Outline glow", "ESPHighlight")
-
 	makeSection("Style")
 	makeColorRow("ESP color", "ESPColor")
 	makeConfigToggle("Use team colors", "ESPTeamColors")
@@ -1617,19 +1321,16 @@ local function buildGui()
 	makeSlider("Text size", "ESPTextSize", 10, 22, 1, 0)
 	makeSlider("Look line length", "ESPLookLength", 2, 50, 1, 0)
 
-	-- VISUAL PAGE
 	newPage("Visual")
-	makeSection("FOV Circle")
+	makeSection("FOV circle")
 	makeConfigToggle("Show FOV circle", "ShowFOV")
 	makeConfigToggle("Only while aiming", "ShowFOVOnlyWhenActive")
 	makeColorRow("FOV color", "FOVColor")
 	makeSlider("Circle thickness", "FOVThickness", 0.5, 5, 0.5, 1)
-
 	makeSection("Lighting")
 	makeConfigToggle("Full bright", "FullBright")
 	makeSlider("Brightness level", "FullBrightLevel", 1, 5, 0.5, 1)
-	makeNote("Original lighting is restored when disabled or closed.", 28)
-
+	makeNote("Full bright restores the original lighting when switched off or closed.", 28)
 	makeSection("Utilities")
 	makeConfigToggle("Custom FOV", "FOVChangerEnabled")
 	makeSlider("Field of view", "CustomFOV", 60, 120, 1, 0)
@@ -1637,178 +1338,114 @@ local function buildGui()
 	makeSlider("Crosshair size", "CrosshairSize", 4, 64, 1, 0)
 	makeSlider("Crosshair gap", "CrosshairGap", 0, 32, 1, 0)
 	makeSlider("Crosshair thickness", "CrosshairThickness", 1, 8, 1, 0)
-	makeCycle("Theme preset", "ThemePreset", {
-		"Cyberpunk Neon", "Midnight Purple",
-		"Emerald Dark", "Obsidian Gold"
-	})
+	makeCycle("Theme preset", "ThemePreset", { "Cyberpunk Neon", "Midnight Purple", "Emerald Dark", "Obsidian Gold" })
 
-	-- LOOT PAGE
 	newPage("Loot & Items")
-	makeSection("Loot & Containers")
+	makeSection("Loot & Container ESP")
 	makeConfigToggle("Item ESP enabled", "LootESPEnabled")
-	makeSlider("Max scan distance", "LootESPMaxDistance", 50, 20000, 50, 0, 1)
+	makeSlider("Max scan distance (studs)", "LootESPMaxDistance", 50, 20000, 50, 0, 1)
 	makeConfigToggle("Show distance text", "LootESPShowDistance")
-	makeConfigToggle("Show containers", "LootESPShowContainers")
-
-	makeSection("Categories")
+	makeConfigToggle("Show containers / drawers / boxes", "LootESPShowContainers")
+	makeSection("Item categories")
 	makeConfigToggle("Weapons", "LootESPShowWeapons")
 	makeConfigToggle("Ammo", "LootESPShowAmmo")
 	makeConfigToggle("Key and quest items", "LootESPShowImportant")
 	makeConfigToggle("General materials", "LootESPShowGeneral")
 
-	-- PLAYER PAGE
 	newPage("Player")
-	makeSection("Filters")
+	makeSection("Filters (Aim and ESP)")
 	makeConfigToggle("Skip teammates", "TeamCheck")
 	makeConfigToggle("Include neutral players", "TargetNeutralPlayers")
 	makeConfigToggle("Skip dead players", "AliveCheck")
 	makeConfigToggle("Skip ForceField players", "IgnoreForceField")
-
-	makeSection("Information")
+	makeSection("Info")
 	ui.statsLabel = makeNote("", 36)
 
-	-- KEYS PAGE
 	newPage("Keys")
 	makeSection("Configuration")
 	makeConfigToggle("Auto-save configuration", "AutoSaveEnabled")
-
-	makeAction("Reset configuration", function()
-		resetConfig()
-		syncUI()
-	end)
-
+	makeAction("Reset configuration", function() resetConfig(); syncUI() end)
 	makeAction("Unload script", shutdown)
-
-	makeSection("Key Bindings")
+	makeSection("Key bindings")
 	makeBind("Aim activation", "ActivationInput", false)
 	makeBind("Toggle aim assist", "SystemToggleKey", true)
 	makeBind("Toggle ESP", "ESPToggleKey", true)
 	makeBind("Toggle full bright", "FullBrightToggleKey", true)
 	makeBind("Minimize panel", "GuiToggleKey", true)
-
-	makeNote(
-		"Select a binding, then press a key or mouse button. Esc cancels; Backspace clears optional bindings.",
-		40
-	)
+	makeNote("Click a button, then press a key or mouse button. Esc cancels, Backspace clears (not for aim activation).", 44)
 
 	syncUI()
 	selectTab("Aim", true)
 
-	-- MINIMIZE / RESTORE ANIMATION
+	-- Minimize animation
 	setMinimizedFn = function(value, instant)
 		if closed or not ui then return end
-
 		value = value == true
 		minimized = value
-
 		animToken += 1
 		local token = animToken
-
 		endDrag()
 		clampPanelPosition()
 		applyPanelPosition()
 
 		if value then
 			ui.pill.Visible = true
-
 			if instant then
 				ui.pill.GroupTransparency = 0
 				ui.panel.GroupTransparency = 1
 				ui.panel.Visible = false
 			else
-				tw(ui.pill, 0.3, {
-					GroupTransparency = 0,
-				}, Enum.EasingStyle.Quart)
-
-				local tween = tw(ui.panel, 0.2, {
-					GroupTransparency = 1,
-				}, Enum.EasingStyle.Quad)
-
-				if tween then
-					tween.Completed:Once(function()
-						if not closed and ui and token == animToken then
-							ui.panel.Visible = false
-						end
-					end)
-				end
+				tw(ui.pill, 0.4, { GroupTransparency = 0 }, Enum.EasingStyle.Back)
+				local t = tw(ui.panel, 0.3, { GroupTransparency = 1 }, Enum.EasingStyle.Quad)
+				if t then t.Completed:Once(function()
+					if not closed and ui and token == animToken then
+						ui.panel.Visible = false
+					end
+				end) end
 			end
 		else
 			ui.panel.Visible = true
-
 			if instant then
 				ui.panel.GroupTransparency = 0
 				ui.pill.GroupTransparency = 1
 				ui.pill.Visible = false
 			else
-				ui.panel.GroupTransparency = 1
-
-				tw(ui.panel, 0.3, {
-					GroupTransparency = 0,
-				}, Enum.EasingStyle.Quart)
-
-				local tween = tw(ui.pill, 0.18, {
-					GroupTransparency = 1,
-				}, Enum.EasingStyle.Quad)
-
-				if tween then
-					tween.Completed:Once(function()
-						if not closed and ui and token == animToken then
-							ui.pill.Visible = false
-						end
-					end)
-				end
+				tw(ui.panel, 0.45, { GroupTransparency = 0 }, Enum.EasingStyle.Back)
+				local t = tw(ui.pill, 0.25, { GroupTransparency = 1 }, Enum.EasingStyle.Quad)
+				if t then t.Completed:Once(function()
+					if not closed and ui and token == animToken then
+						ui.pill.Visible = false
+					end
+				end) end
 			end
 		end
 	end
 
-	track(minButton.Activated:Connect(function()
-		setMinimizedFn(true, false)
-	end))
-
-	track(pillButton.Activated:Connect(function()
-		setMinimizedFn(false, false)
-	end))
-
+	track(minButton.Activated:Connect(function() setMinimizedFn(true, false) end))
+	track(pillButton.Activated:Connect(function() setMinimizedFn(false, false) end))
 	track(closeButton.Activated:Connect(shutdown))
 
-	-- DRAG WINDOW
+	-- Drag
 	track(dragHandle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
 			or input.UserInputType == Enum.UserInputType.Touch then
-
-			local startPtr = Vector2.new(
-				input.Position.X,
-				input.Position.Y
-			)
-
+			local startPtr = Vector2.new(input.Position.X, input.Position.Y)
 			local startPos = panelPos
-
 			beginDrag(function(pos)
-				panelPos = startPos + (
-					Vector2.new(pos.X, pos.Y) - startPtr
-				)
-
+				panelPos = startPos + (Vector2.new(pos.X, pos.Y) - startPtr)
 				clampPanelPosition()
 				applyPanelPosition()
 			end, input, nil)
 		end
 	end))
 
-	track(panelGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(
-		updateLayout
-	))
+	track(panelGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateLayout))
 
 	overlayGui.Parent = playerGui
 	panelGui.Parent = playerGui
-
 	updateLayout()
-
-	setMinimizedFn(
-		Config.UIStartMinimized,
-		Config.UIStartMinimized == true
-	)
+	setMinimizedFn(Config.UIStartMinimized, Config.UIStartMinimized == true)
 end
-
 
 --------------------------------------------------------------------------------
 -- 13. MAIN LOOP

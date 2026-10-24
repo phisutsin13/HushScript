@@ -24,7 +24,7 @@ end
 --------------------------------------------------------------------------------
 -- 2. REMOTE LOADER
 --------------------------------------------------------------------------------
-local BASE_URL = "https://raw.githubusercontent.com/phisutsin13/HushScript/refs/heads/main/src/"
+local BASE_URL = "https://raw.githubusercontent.com/phisutsin13/HushScript/refs/heads/main/Hush-script.lua"
 
 local function loadModule(relativePath)
 	local url     = BASE_URL .. relativePath
